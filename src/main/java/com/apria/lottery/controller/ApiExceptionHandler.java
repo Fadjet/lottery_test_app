@@ -1,5 +1,6 @@
 package com.apria.lottery.controller;
 
+import com.apria.lottery.exception.EntityNotFoundException;
 import com.apria.lottery.exception.EntityValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -14,6 +15,13 @@ public class ApiExceptionHandler {
   @ResponseStatus(value = HttpStatus.BAD_REQUEST)
   @ResponseBody
   public String handleInvalidRequestError(EntityValidationException ex) {
+    return ex.getMessage();
+  }
+
+  @ExceptionHandler(EntityNotFoundException.class)
+  @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+  @ResponseBody
+  public String handleInvalidRequestError(EntityNotFoundException ex) {
     return ex.getMessage();
   }
 

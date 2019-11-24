@@ -2,6 +2,7 @@ package com.apria.lottery.functionaltest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -68,6 +69,7 @@ public class UserControllerFuncTest {
             .withBasicAuth("lottery_user", "passw0rd")
             .postForEntity("/users", request, UserDto.class);
     assertEquals(HttpStatus.OK, result.getStatusCode());
+    assertNotNull(result.getBody());
     assertEquals(userDto.getFirstName(), result.getBody().getFirstName());
     assertEquals(userDto.getLastName(), result.getBody().getLastName());
     assertEquals(userDto.getBirthday(), result.getBody().getBirthday());
@@ -107,6 +109,7 @@ public class UserControllerFuncTest {
             .getForEntity(String.format("/users/%s", postResult.getBody().getId()), UserDto.class);
 
     assertEquals(HttpStatus.OK, finalResult.getStatusCode());
+    assertNotNull(finalResult.getBody());
     assertEquals(postResult.getBody().getId(), finalResult.getBody().getId());
     assertEquals(userDtoForPut.getFirstName(), finalResult.getBody().getFirstName());
     assertEquals(userDtoForPut.getLastName(), finalResult.getBody().getLastName());
@@ -125,6 +128,7 @@ public class UserControllerFuncTest {
     ResponseEntity<UserDto[]> result =
         template.withBasicAuth("lottery_user", "passw0rd").getForEntity("/users", UserDto[].class);
     assertEquals(HttpStatus.OK, result.getStatusCode());
+    assertNotNull(result.getBody());
     assertEquals(3, result.getBody().length);
   }
 
@@ -298,6 +302,41 @@ public class UserControllerFuncTest {
 
     assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
     assertEquals("Last name cannot be empty.", result.getBody());
+  }
+
+  @Test
+  public void getUserById_shouldReturnUser() {
+    UserDto userDto =
+        new UserDto.Builder().firstName("test").lastName("test").birthday("2017-01-01").build();
+    HttpEntity<UserDto> request = new HttpEntity<>(userDto);
+    ResponseEntity<UserDto> postResult =
+        template
+            .withBasicAuth("lottery_user", "passw0rd")
+            .postForEntity("/users", request, UserDto.class);
+    assertNotNull(postResult.getBody());
+    ResponseEntity<UserDto> getResult =
+        template
+            .withBasicAuth("lottery_user", "passw0rd")
+            .getForEntity(String.format("/users/%s", postResult.getBody().getId()), UserDto.class);
+
+    assertEquals(HttpStatus.OK, getResult.getStatusCode());
+    assertNotNull(getResult.getBody());
+    assertNotNull(getResult.getBody().getId());
+    assertTrue(getResult.getBody().getId().equals(postResult.getBody().getId()));
+    assertEquals(userDto.getFirstName(), getResult.getBody().getFirstName());
+    assertEquals(userDto.getLastName(), getResult.getBody().getLastName());
+    assertEquals(userDto.getBirthday(), getResult.getBody().getBirthday());
+  }
+
+  @Test
+  public void getUserById_shouldNotReturnUser_EntityNotFoundException() {
+    ResponseEntity<String> result =
+        template
+            .withBasicAuth("lottery_user", "passw0rd")
+            .getForEntity("/users/1", String.class);
+
+    assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+    assertEquals("Entity is not found.", result.getBody());
   }
 
   @After
